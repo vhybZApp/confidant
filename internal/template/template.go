@@ -7,7 +7,7 @@ import (
 	gt "text/template"
 )
 
-const defaultRenderPath = "./temp"
+const defaultRenderPath = "./tmpl"
 
 var (
 	ErrTemplateNameEmpty = errors.New("template name can not be empty")
