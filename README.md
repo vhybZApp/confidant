@@ -1,3 +1,3 @@
 # Confidant
 
-an agent who live in your local enviroment do your chors and learn your exprince by watching you in the hope that some day it will be better than you.
+Confidant lives in your local environment do your chores and learn your experience by watching you in the hope that some day it will be better than you.
