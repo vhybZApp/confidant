@@ -11,7 +11,7 @@ const defaultRenderPath = "./temp"
 
 var (
 	ErrTemplateNameEmpty = errors.New("template name can not be empty")
-	ErrTemplateNotFound  = errors.New("template not found")
+	ErrTemplateNotFound  = errors.New("no such file or directory")
 )
 
 func Render(name string, data any) (string, error) {
@@ -22,6 +22,7 @@ func Render(name string, data any) (string, error) {
 	f := path.Join(defaultRenderPath, name)
 	t, err := gt.ParseFiles(f)
 	if err != nil {
+		err = errors.Unwrap(err)
 		return "", err
 	}
 
