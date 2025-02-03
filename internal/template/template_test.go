@@ -8,26 +8,30 @@ import (
 )
 
 func TestEmptyNameRender(t *testing.T) {
-	_, err := template.Render("", nil)
+	tmpl := template.NewTemplateEngine("./test_data")
+	_, err := tmpl.Render("", nil)
 
 	assert.EqualError(t, err, template.ErrTemplateNameEmpty.Error())
 }
 
 func TestNoVaribleTemplate(t *testing.T) {
-	resulte, err := template.Render("novar", nil)
+	tmpl := template.NewTemplateEngine("./test_data")
+	resulte, err := tmpl.Render("novar", nil)
 
 	assert.NoError(t, err, "expected no error")
 	assert.Equal(t, "test\n", resulte, "expect test got: ")
 }
 
 func TestTemplateNoteFound(t *testing.T) {
-	_, err := template.Render("notfound", nil)
+	tmpl := template.NewTemplateEngine("./test_data")
+	_, err := tmpl.Render("notfound", nil)
 
 	assert.ErrorContains(t, err, template.ErrTemplateNotFound.Error())
 }
 
 func TestTemplateWithVar(t *testing.T) {
-	resulte, err := template.Render("withvar", map[string]string{
+	tmpl := template.NewTemplateEngine("./test_data")
+	resulte, err := tmpl.Render("withvar", map[string]string{
 		"key": "testkey",
 	})
 

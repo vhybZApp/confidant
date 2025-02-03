@@ -12,6 +12,7 @@ type ConfigFunc func(*Config)
 
 type Config struct {
 	AzurOpenAIConf *AzurOpenAIConfig
+	TemplatePath   string
 }
 
 type AzurOpenAIConfig struct {
@@ -20,10 +21,13 @@ type AzurOpenAIConfig struct {
 }
 
 func defaultConfig() Config {
-	return Config{AzurOpenAIConf: &AzurOpenAIConfig{
-		Key: "",
-		URL: "",
-	}}
+	return Config{
+		AzurOpenAIConf: &AzurOpenAIConfig{
+			Key: "",
+			URL: "",
+		},
+		TemplatePath: "./tmpl",
+	}
 }
 
 func Configuration(configs ...ConfigFunc) *Config {
@@ -37,7 +41,7 @@ func Configuration(configs ...ConfigFunc) *Config {
 func WithDotEnvConfig(conf *Config) {
 	envFile := ".env"
 	if IsTestEnv() {
-		envFile = ".env.test"
+		envFile = "../../.env.test"
 	}
 	err := godotenv.Load(envFile)
 	if err != nil {

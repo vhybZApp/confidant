@@ -19,4 +19,5 @@ func TestDotEnvFile(t *testing.T) {
 
 	assert.Equal(t, conf.AzurOpenAIConf.Key, "testkey")
 	assert.Equal(t, conf.AzurOpenAIConf.URL, "testurl")
+	assert.Equal(t, conf.TemplatePath, "./tmpl")
 }

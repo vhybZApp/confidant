@@ -16,6 +16,23 @@ func (m mind) Ready() bool {
 	return m.ready
 }
 
+func (m mind) Plan() (Plan, error) {
+	return Plan{
+		Actions: []Action{},
+	}, nil
+}
+
+type Plan struct {
+	Actions []Action
+}
+
+type Action struct {
+	Expect string
+	Output string
+	Func   string
+	Args   []string
+}
+
 func NewMind(url, key string) *mind {
 	m := &mind{}
 
