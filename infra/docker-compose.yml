@@ -1,0 +1,37 @@
+
+services:
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:latest
+    container_name: openwebui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    env_file:
+      - .env
+    volumes:
+      - openwebui-data:/app/backend/data
+      - olamma-data:/root/.olamma 
+    depends_on:
+      - llmlite
+
+  llmlite:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: llmlite
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    volumes:
+      - ./llmlite-config.yml:/app/config.yml
+    command: ["--config", "/app/config.yml"]
+
+volumes:
+  openwebui-data:
+    # external: true
+    name: ${OPENWEBUI_VOLUME}
+  olamma-data:
+    # external: true
+    name: ${OLAMMA_VOLUME}
+  
+  llmlite-data:

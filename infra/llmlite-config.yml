@@ -1,0 +1,7 @@
+model_list:
+  - model_name: azure-gpt-4o
+    litellm_params:
+      model: os.environ/AZURE_OPENAI_MODEL
+      api_base: os.environ/AZURE_OPENAI_API_BASE 
+      api_key: os.environ/AZURE_OPENAI_API_KEY
+      api_version: os.environ/AZURE_OPENAI_API_VERSION 
