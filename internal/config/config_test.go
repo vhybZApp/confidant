@@ -17,7 +17,7 @@ func TestDefaultConfig(t *testing.T) {
 func TestDotEnvFile(t *testing.T) {
 	conf := config.Configuration(config.WithDotEnvConfig)
 
-	assert.Equal(t, conf.AzurOpenAIConf.Key, "testkey")
-	assert.Equal(t, conf.AzurOpenAIConf.URL, "testurl")
+	assert.Equal(t, conf.AzurOpenAIConf.Key, "secret")
+	assert.Equal(t, conf.AzurOpenAIConf.URL, "http://localhost:4000")
 	assert.Equal(t, conf.TemplatePath, "./tmpl")
 }

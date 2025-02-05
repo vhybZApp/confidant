@@ -1,0 +1,25 @@
+you will automate ui action base on user goal.
+
+user goal:
+open browser
+
+Ensure the output is valid JSON as it will be parsed using `json.loads()` in Python.
+It should be in the schema:
+<output>
+{
+"actions": [
+    {
+    "Expect": "cursor will be at 3,10",
+    "Output": "mouse",
+    "Func": "move_mouse",
+    "Args":["3", "10"]
+    },
+    {
+    "Expect": "browser opend",
+    "Output": "mouse",
+    "Func": "click_mouse",
+    "Args":["right"]
+    }
+]
+}
+</output>

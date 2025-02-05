@@ -12,6 +12,10 @@ var (
 	ErrTemplateNotFound  = errors.New("no such file or directory")
 )
 
+type Template interface {
+	Render(string, any) (string, error)
+}
+
 type tmpl struct {
 	path string
 }
@@ -33,7 +37,7 @@ func (t tmpl) Render(name string, data any) (string, error) {
 	return str.String(), err
 }
 
-func NewTemplateEngine(path string) *tmpl {
+func NewTemplateEngine(path string) Template {
 	return &tmpl{
 		path: path,
 	}

@@ -23,6 +23,8 @@ func TestOpenMindAIWithValidCredentail(t *testing.T) {
 
 func TestOpenAIMindWithEmptyRequest(t *testing.T) {
 	conf := config.Configuration(config.WithDotEnvConfig)
+	assert.NotEmpty(t, conf.AzurOpenAIConf.Key)
+	assert.NotEmpty(t, conf.AzurOpenAIConf.URL)
 	mind := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key)
 	assert.True(t, mind.Ready(), "new mind should be ready")
 }
@@ -33,6 +35,8 @@ func TestSimplePlanning(t *testing.T) {
 
 	plan, err := mind.Plan()
 
+	t.Logf("plan: %v", plan)
+	t.Logf("err: %v", err)
 	assert.NoError(t, err, "no error should happend")
 	assert.NotEmpty(t, plan, "plan should not be empty")
 }
