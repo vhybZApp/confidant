@@ -1,0 +1,19 @@
+please find the requested element in the screen shot and retrun top-left and bottom-right coordinates in JSON format schema discribed blow.
+
+element description:
+chrome browser icon
+
+Ensure the output is valid JSON as it will be parsed using `json.loads()` in Python.
+It should be in the schema:
+<output>
+{
+    "top-left" : {
+      "x": "top-left x posion in pixel",
+      "y": "top-left y posion in pixel"
+    },
+    "bottom-right" : {
+      "x": "bottom-right x posion in pixel",
+      "y": "bottom-right y posion in pixel",
+    }
+}
+</output>

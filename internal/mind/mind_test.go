@@ -40,3 +40,31 @@ func TestSimplePlanning(t *testing.T) {
 	assert.NoError(t, err, "no error should happend")
 	assert.NotEmpty(t, plan, "plan should not be empty")
 }
+
+func TestBlindVision(t *testing.T) {
+	conf := config.Configuration(config.WithDotEnvConfig)
+	m := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key)
+	box, err := m.Detect("icon", nil)
+
+	assert.Error(t, err)
+	assert.Equal(t, ErrBlindVision, err)
+	assert.Empty(t, box)
+}
+
+func TestDetection(t *testing.T) {
+	conf := config.Configuration(config.WithDotEnvConfig)
+	m := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key)
+
+	mvi := NewMockScreenInspector([]string{"test_data/application_menu.png"})
+
+	input, err := mvi.Inspect()
+	assert.NoError(t, err)
+
+	box, err := m.Detect("browser icon", input)
+
+	t.Logf("box: %v", box)
+	t.Logf("err: %v", err)
+
+	assert.NotEmpty(t, box)
+	assert.NoError(t, err)
+}

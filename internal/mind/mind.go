@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/farhoud/confidant/internal/template"
@@ -16,17 +17,59 @@ import (
 // Generate the JSON schema at initialization time
 var HistoricalComputerResponseSchema = GenerateSchema[Plan]()
 
-type mind struct {
+type mindService struct {
 	ready  bool
 	client *openai.Client
 	tmpl   template.Template
 }
 
-func (m mind) Ready() bool {
+func (m mindService) Ready() bool {
 	return m.ready
 }
 
-func (m mind) Plan() (Plan, error) {
+func (m mindService) Detect(d string, i io.Reader) (Box, error) {
+	if i == nil {
+		return Box{}, ErrBlindVision
+	}
+
+	client := m.client
+
+	sm, err := m.tmpl.Render("vision-detection-system", nil)
+	if err != nil {
+		return Box{}, err
+	}
+
+	ib64, err := EncodeToBase64(i)
+	if err != nil {
+		return Box{}, err
+	}
+	url := GenerateOpenAIImageInput(ib64, "image/png")
+	resp, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
+		Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
+			openai.SystemMessage(sm),
+			openai.ChatCompletionUserMessageParam{
+				Role:    openai.F(openai.ChatCompletionUserMessageParamRoleUser),
+				Content: openai.F([]openai.ChatCompletionContentPartUnionParam{openai.ImagePart(url)}),
+			},
+		}),
+		Model: openai.F("azure-gpt-4o"),
+	})
+	if err != nil {
+		return Box{}, nil
+	}
+
+	box := Box{}
+	err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), &box)
+	if err != nil {
+		//  TODO: Update the following line with your application specific error handling logic
+		log.Printf("ERROR: %s", err)
+		log.Printf("resp: %v", resp.Choices[0].Message.Content)
+		return box, err
+	}
+	return box, nil
+}
+
+func (m mindService) Plan() (Plan, error) {
 	client := m.client
 	question := "Start browser"
 
@@ -81,8 +124,8 @@ func GenerateSchema[T any]() interface{} {
 	return schema
 }
 
-func NewMind(url, key string) *mind {
-	m := &mind{}
+func NewMind(url, key string) *mindService {
+	m := &mindService{}
 
 	if url == "" || key == "" {
 		return m
