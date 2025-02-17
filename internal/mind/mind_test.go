@@ -55,7 +55,7 @@ func TestDetection(t *testing.T) {
 	conf := config.Configuration(config.WithDotEnvConfig)
 	m := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key)
 
-	mvi := NewMockScreenInspector([]string{"test_data/application_menu.png"})
+	mvi := NewMockScreenInspector([]string{"test_data/mac-desktop.jpg"})
 
 	input, err := mvi.Inspect()
 	assert.NoError(t, err)

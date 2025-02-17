@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"github.com/farhoud/confidant/internal/template"
+	"github.com/farhoud/confidant/pkg/omni"
 
 	"github.com/invopop/jsonschema"
 	"github.com/openai/openai-go"
@@ -21,6 +22,7 @@ type mindService struct {
 	ready  bool
 	client *openai.Client
 	tmpl   template.Template
+	op     *omni.Client
 }
 
 func (m mindService) Ready() bool {
@@ -34,22 +36,27 @@ func (m mindService) Detect(d string, i io.Reader) (Box, error) {
 
 	client := m.client
 
-	sm, err := m.tmpl.Render("vision-detection-system", nil)
-	if err != nil {
-		return Box{}, err
-	}
-
 	ib64, err := EncodeToBase64(i)
 	if err != nil {
 		return Box{}, err
 	}
-	url := GenerateOpenAIImageInput(ib64, "image/png")
+
+	or, err := m.op.Parse(context.TODO(), ib64)
+	if err != nil {
+		return Box{}, err
+	}
+
+	sm, err := m.tmpl.Render("vision-detection-system", or)
+	if err != nil {
+		return Box{}, err
+	}
+
 	resp, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
 		Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
 			openai.SystemMessage(sm),
 			openai.ChatCompletionUserMessageParam{
 				Role:    openai.F(openai.ChatCompletionUserMessageParamRoleUser),
-				Content: openai.F([]openai.ChatCompletionContentPartUnionParam{openai.ImagePart(url)}),
+				Content: openai.F([]openai.ChatCompletionContentPartUnionParam{openai.ImagePart(or.ImageBase64)}),
 			},
 		}),
 		Model: openai.F("azure-gpt-4o"),
@@ -130,6 +137,8 @@ func NewMind(url, key string) *mindService {
 	if url == "" || key == "" {
 		return m
 	}
+
+	m.op = omni.NewClient("http://localhost:8000")
 
 	m.tmpl = template.NewTemplateEngine("./tmpl")
 
