@@ -34,9 +34,17 @@ type ParseRequest struct {
 
 // ParseResponse represents the response from the API.
 type ParseResponse struct {
-	ImageBase64       string   `json:"som_image_base64"`
-	ParsedContentList []string `json:"parsed_content_list"`
-	Latency           float64  `json:"latency"`
+	ImageBase64       string          `json:"som_image_base64"`
+	ParsedContentList []ParsedContent `json:"parsed_content_list"`
+	Latency           float64         `json:"latency"`
+}
+
+type ParsedContent struct {
+	Type          string     `json:"type"`
+	BBox          [4]float64 `json:"bbox"`
+	Interactivity bool       `json:"interactivity"`
+	Content       string     `json:"content"`
+	Source        string     `json:"source"`
 }
 
 // Parse sends an image for parsing and returns the response.

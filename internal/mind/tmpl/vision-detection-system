@@ -3,10 +3,10 @@ please find the requested element in the screen shot and retrun top-left and bot
 element description:
 chrome browser icon
 
-coordinates:
+OCRed Content:
 {{ .ParsedContentList }}
 
-
+Response should not be in Markdown
 Ensure the output is valid JSON as it will be parsed using `json.loads()` in Python.
 It should be in the schema:
 <output>

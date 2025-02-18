@@ -8,15 +8,15 @@ import (
 )
 
 type Inspect interface {
-	Inspect() (io.Reader, error)
+	Inspect() (io.ReadSeeker, error)
 }
 
 type MockScreenInspector struct {
-	data  []io.Reader
+	data  []io.ReadSeeker
 	index uint
 }
 
-func (m MockScreenInspector) Inspect() (io.Reader, error) {
+func (m MockScreenInspector) Inspect() (io.ReadSeeker, error) {
 	if m.index >= uint(len(m.data)) {
 		return nil, errors.New("index out of bound")
 	}
@@ -27,7 +27,7 @@ func (m MockScreenInspector) Inspect() (io.Reader, error) {
 }
 
 func NewMockScreenInspector(paths []string) Inspect {
-	var readers []io.Reader
+	var readers []io.ReadSeeker
 
 	for _, path := range paths {
 		file, err := os.Open(path)

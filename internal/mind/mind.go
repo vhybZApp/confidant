@@ -29,7 +29,7 @@ func (m mindService) Ready() bool {
 	return m.ready
 }
 
-func (m mindService) Detect(d string, i io.Reader) (Box, error) {
+func (m mindService) Detect(d string, i io.ReadSeeker) (Box, error) {
 	if i == nil {
 		return Box{}, ErrBlindVision
 	}
@@ -46,17 +46,20 @@ func (m mindService) Detect(d string, i io.Reader) (Box, error) {
 		return Box{}, err
 	}
 
+	dataURl := DataURL("image/png", or.ImageBase64)
 	sm, err := m.tmpl.Render("vision-detection-system", or)
 	if err != nil {
 		return Box{}, err
 	}
+
+	log.Printf("sm: %s", sm)
 
 	resp, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
 		Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
 			openai.SystemMessage(sm),
 			openai.ChatCompletionUserMessageParam{
 				Role:    openai.F(openai.ChatCompletionUserMessageParamRoleUser),
-				Content: openai.F([]openai.ChatCompletionContentPartUnionParam{openai.ImagePart(or.ImageBase64)}),
+				Content: openai.F([]openai.ChatCompletionContentPartUnionParam{openai.ImagePart(dataURl)}),
 			},
 		}),
 		Model: openai.F("azure-gpt-4o"),
