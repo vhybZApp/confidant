@@ -10,13 +10,8 @@ import (
 	"github.com/farhoud/confidant/internal/template"
 	"github.com/farhoud/confidant/pkg/omni"
 
-	"github.com/invopop/jsonschema"
 	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
 )
-
-// Generate the JSON schema at initialization time
-var HistoricalComputerResponseSchema = GenerateSchema[Plan]()
 
 type mindService struct {
 	ready  bool
@@ -122,34 +117,4 @@ type Action struct {
 	Output string   `json:"Output" jsonschema_description:"on which output should happend like mouse or keyboard"`
 	Func   string   `json:"Func" jsonschema_description:"The function that should be called"`
 	Args   []string `json:"Args" jsonschema_description:"The arguments that should be passed to the function"`
-}
-
-func GenerateSchema[T any]() interface{} {
-	reflector := jsonschema.Reflector{
-		AllowAdditionalProperties: false,
-		DoNotReference:            true,
-	}
-	var v T
-	schema := reflector.Reflect(v)
-	return schema
-}
-
-func NewMind(url, key string) *mindService {
-	m := &mindService{}
-
-	if url == "" || key == "" {
-		return m
-	}
-
-	m.op = omni.NewClient("http://localhost:8000")
-
-	m.tmpl = template.NewTemplateEngine("./tmpl")
-
-	m.client = openai.NewClient(
-		option.WithAPIKey(key),
-		option.WithBaseURL(url),
-	)
-	m.ready = true
-
-	return m
 }
