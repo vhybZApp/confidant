@@ -11,7 +11,6 @@ import (
 
 type LLM struct {
 	client *openai.Client
-	tmpl   template.Template
 	model  string
 }
 
@@ -40,7 +39,6 @@ func (l LLM) Call(messages []openai.ChatCompletionMessageParamUnion, v any) erro
 func NewLLM(client *openai.Client, tmpl template.Template, model string) LLM {
 	return LLM{
 		client: client,
-		tmpl:   tmpl,
 		model:  model,
 	}
 }

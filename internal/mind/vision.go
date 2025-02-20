@@ -1,26 +1,80 @@
 package mind
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/farhoud/confidant/pkg/omni"
 )
 
 var ErrBlindVision = errors.New("input is null we are blind")
 
-type Point struct {
-	X int `json:"x"`
-	Y int `json:"y"`
+type BoundedBox struct {
+	X      float64 `json:"x"`
+	Y      float64 `json:"y"`
+	Height float64 `json:"height"`
+	Width  float64 `json:"width"`
 }
-type Box struct {
-	TRPoint Point `json:"top-left"`
-	BLPoint Point `json:"bottom-right"`
+type Annotation struct {
+	BoundedBox BoundedBox `json:"bbox"`
+	CType      string     `json:"type"`
+	Contetnt   string     `jsnon:"content"`
+	ID         int        `json:"id"`
 }
 
-type Vision interface {
-	Detect(description string, input io.ReadSeeker) (Box, error)
+type AnnotatedImage struct {
+	ImageBase64 string       `json:"image_base64"`
+	Annotations []Annotation `json:"annotations"`
+	ScreenInfo  string       `json:"screen_info"`
+}
+
+type Vision struct {
+	client *omni.Client
+}
+
+func (v Vision) Annotate(description string, input io.Reader) (AnnotatedImage, error) {
+	ai := AnnotatedImage{}
+
+	ib64, err := EncodeToBase64(input)
+	if err != nil {
+		return ai, err
+	}
+
+	or, err := v.client.Parse(context.TODO(), ib64)
+	if err != nil {
+		return ai, err
+	}
+
+	ai.Annotations = make([]Annotation, len(or.ParsedContentList))
+	ai.ImageBase64 = or.ImageBase64
+	for i, item := range or.ParsedContentList {
+		switch item.Type {
+		case "text":
+			ai.ScreenInfo += fmt.Sprintf("ID: %d, Text: %s \n", i, item.Content)
+		case "icon":
+			ai.ScreenInfo += fmt.Sprintf("ID: %d, Icon: %s \n", i, item.Content)
+		}
+		ai.Annotations[i] = Annotation{
+			BoundedBox: BoundedBox{
+				X:      item.BBox[0],
+				Y:      item.BBox[1],
+				Height: item.BBox[2],
+				Width:  item.BBox[3],
+			},
+			CType:    item.Type,
+			Contetnt: item.Content,
+			ID:       i,
+		}
+	}
+	return ai, nil
+}
+
+func NewVision(client *omni.Client) Vision {
+	return Vision{client: client}
 }
 
 func EncodeToBase64(reader io.Reader) (string, error) {

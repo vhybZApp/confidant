@@ -1,103 +1,59 @@
 package mind
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 
 	"github.com/farhoud/confidant/internal/template"
 	"github.com/farhoud/confidant/pkg/omni"
-
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
 )
 
 type mindService struct {
 	ready  bool
-	client *openai.Client
+	llm    *LLM
+	vision *Vision
 	tmpl   template.Template
-	op     *omni.Client
+	screen Inspect
 }
 
 func (m mindService) Ready() bool {
 	return m.ready
 }
 
-func (m mindService) Detect(d string, i io.ReadSeeker) (Box, error) {
-	if i == nil {
-		return Box{}, ErrBlindVision
+func (m mindService) Plan(goal string) (Plan, error) {
+	plan := Plan{}
+	reader, err := m.screen.Inspect()
+	if err != nil {
+		return plan, err
 	}
 
-	client := m.client
-
-	ib64, err := EncodeToBase64(i)
+	andi, err := m.vision.Annotate("screen", reader)
 	if err != nil {
-		return Box{}, err
+		return plan, err
 	}
-
-	or, err := m.op.Parse(context.TODO(), ib64)
+	sm, err := m.tmpl.Render("planner-system", nil)
 	if err != nil {
-		return Box{}, err
-	}
-
-	dataURl := DataURL("image/png", or.ImageBase64)
-	sm, err := m.tmpl.Render("vision-detection-system", or)
-	if err != nil {
-		return Box{}, err
+		return plan, fmt.Errorf("unable to render template: %w", err)
 	}
 
 	log.Printf("sm: %s", sm)
 
-	resp, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
-		Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage(sm),
-			openai.ChatCompletionUserMessageParam{
-				Role:    openai.F(openai.ChatCompletionUserMessageParamRoleUser),
-				Content: openai.F([]openai.ChatCompletionContentPartUnionParam{openai.ImagePart(dataURl)}),
-			},
-		}),
-		Model: openai.F("azure-gpt-4o"),
-	})
-	if err != nil {
-		return Box{}, nil
+	dataURl := DataURL("image/png", andi.ImageBase64)
+
+	messages := []openai.ChatCompletionMessageParamUnion{
+		openai.SystemMessage(sm),
+		openai.ChatCompletionUserMessageParam{
+			Role: openai.F(openai.ChatCompletionUserMessageParamRoleUser),
+			Content: openai.F([]openai.ChatCompletionContentPartUnionParam{
+				openai.ImagePart(dataURl),
+				openai.ChatCompletionContentPartTextParam{Text: openai.F(goal), Type: openai.F(openai.ChatCompletionContentPartTextTypeText)},
+			}),
+		},
 	}
 
-	box := Box{}
-	err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), &box)
-	if err != nil {
-		//  TODO: Update the following line with your application specific error handling logic
-		log.Printf("ERROR: %s", err)
-		log.Printf("resp: %v", resp.Choices[0].Message.Content)
-		return box, err
-	}
-	return box, nil
-}
-
-func (m mindService) Plan() (Plan, error) {
-	client := m.client
-	question := "Start browser"
-
-	sm, err := m.tmpl.Render("planner-system", nil)
-	if err != nil {
-		return Plan{}, fmt.Errorf("unable to render template: %w", err)
-	}
-
-	resp, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
-		Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage(sm),
-			openai.UserMessage(question),
-		}),
-		Model: openai.F("azure-gpt-4o"),
-	})
-	if err != nil {
-		// TODO: Update the following line with your application specific error handling logic
-		log.Printf("ERROR: %s", err)
-		return Plan{}, nil
-	}
-
-	plan := Plan{}
-	err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), &plan)
+	err = m.llm.Call(messages, &plan)
 	if err != nil {
 		//  TODO: Update the following line with your application specific error handling logic
 		log.Printf("ERROR: %s", err)
@@ -106,6 +62,29 @@ func (m mindService) Plan() (Plan, error) {
 
 	fmt.Printf("%#v", plan)
 	return plan, nil
+}
+
+func NewMind(url, token string, screen Inspect) *mindService {
+	if url == "" || token == "" {
+		return &mindService{ready: false}
+	}
+	oc := openai.NewClient(
+		option.WithBaseURL(url),
+		option.WithAPIKey(token),
+	)
+	omni := omni.NewClient("http://localhost:8000")
+	tmpl := template.NewTemplateEngine("./tmpl")
+
+	llm := NewLLM(oc, tmpl, "azure-gpt-4o")
+	vision := NewVision(omni)
+
+	return &mindService{
+		ready:  true,
+		llm:    &llm,
+		tmpl:   tmpl,
+		vision: &vision,
+		screen: screen,
+	}
 }
 
 type Plan struct {
