@@ -32,10 +32,10 @@ func TestOpenAIMindWithEmptyRequest(t *testing.T) {
 func TestSimplePlanning(t *testing.T) {
 	conf := config.Configuration(config.WithDotEnvConfig)
 
-	mvi := NewMockScreenInspector([]string{"test_data/mac-desktop.jpg"})
+	mvi := NewMockScreenInspector([]string{"test_data/mac-desktop.jpg", "test_data/mac_safari.png"})
 	mind := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key, mvi)
 
-	plan, err := mind.Plan("open chrome")
+	plan, err := mind.Plan("open safari")
 
 	t.Logf("plan: %v", plan)
 	t.Logf("err: %v", err)

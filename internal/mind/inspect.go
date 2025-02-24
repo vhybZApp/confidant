@@ -27,14 +27,14 @@ func (m MockScreenInspector) Inspect() (io.ReadSeeker, error) {
 }
 
 func NewMockScreenInspector(paths []string) Inspect {
-	var readers []io.ReadSeeker
+	readers := make([]io.ReadSeeker, len(paths))
 
-	for _, path := range paths {
+	for i, path := range paths {
 		file, err := os.Open(path)
 		if err != nil {
 			panic(fmt.Sprintf("failed to open file: %s", path))
 		}
-		readers = append(readers, file)
+		readers[i] = file
 	}
 
 	return MockScreenInspector{

@@ -3,7 +3,9 @@ package mind
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"errors"
+	"fmt"
+	"regexp"
 
 	"github.com/farhoud/confidant/internal/template"
 	"github.com/openai/openai-go"
@@ -14,26 +16,18 @@ type LLM struct {
 	model  string
 }
 
-func (l LLM) Call(messages []openai.ChatCompletionMessageParamUnion, v any) error {
+func (l LLM) Call(messages []openai.ChatCompletionMessageParamUnion) (openai.ChatCompletionMessage, error) {
 	resp, err := l.client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
 		Messages: openai.F(messages),
 		Model:    openai.F(l.model),
 	})
 	if err != nil {
-		return err
+		return openai.ChatCompletionMessage{}, err
 	}
 
-	err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), v)
-	if err != nil {
-		//  TODO: Update the following line with your application specific error handling logic
-		log.Printf("ERROR: %s", err)
-		log.Printf("resp: %v", resp.Choices[0].Message.Content)
-		return err
-	}
+	fmt.Printf("llm context: %v \n llm response %v", messages, resp.Choices[0].Message)
 
-	messages = append(messages, resp.Choices[0].Message)
-
-	return nil
+	return resp.Choices[0].Message, nil
 }
 
 func NewLLM(client *openai.Client, tmpl template.Template, model string) LLM {
@@ -41,4 +35,29 @@ func NewLLM(client *openai.Client, tmpl template.Template, model string) LLM {
 		client: client,
 		model:  model,
 	}
+}
+
+func ParseLLMActionResponse(text string) (Action, error) {
+	action := Action{}
+	re := regexp.MustCompile(`(?s)<output>\s*(\{.*?\})\s*</output>`)
+	matches := re.FindStringSubmatch(text)
+
+	if len(matches) > 1 {
+		jsonStr := matches[1]
+
+		// Struct to hold extracted JSON data
+		err := json.Unmarshal([]byte(jsonStr), &action)
+		if err != nil {
+			fmt.Println("Error parsing JSON:", err)
+		} else {
+			// Print the extracted JSON in a formatted way
+			formattedJSON, _ := json.MarshalIndent(action, "", "    ")
+			fmt.Println("Extracted JSON:")
+			fmt.Println(string(formattedJSON))
+		}
+	} else {
+		return action, errors.New("Extract failed")
+	}
+
+	return action, nil
 }
