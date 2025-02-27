@@ -1,6 +1,7 @@
 package mind
 
 import (
+	"io"
 	"testing"
 
 	"github.com/farhoud/confidant/internal/config"
@@ -27,6 +28,18 @@ func TestOpenAIMindWithEmptyRequest(t *testing.T) {
 	assert.NotEmpty(t, conf.AzurOpenAIConf.URL)
 	mind := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key, nil)
 	assert.True(t, mind.Ready(), "new mind should be ready")
+}
+
+func TestMVI(t *testing.T) {
+	screens := []string{"test_data/mac-desktop.jpg", "test_data/mac_safari.png"}
+	mvi := NewMockScreenInspector(screens)
+	for i := 0; i < len(screens); i++ {
+		r, err := mvi.Inspect()
+		assert.NoError(t, err, "inspect should not return error")
+		data, err := io.ReadAll(r)
+		assert.NoError(t, err, "no error should happen")
+		assert.NotEmpty(t, data, "not empty")
+	}
 }
 
 func TestSimplePlanning(t *testing.T) {

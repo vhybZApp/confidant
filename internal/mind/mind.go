@@ -1,11 +1,14 @@
 package mind
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/farhoud/confidant/internal/template"
 	"github.com/farhoud/confidant/pkg/omni"
+	"github.com/go-vgo/robotgo"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
@@ -39,20 +42,23 @@ func (m mindService) Plan(goal string) ([]Action, error) {
 		if err != nil {
 			return plan, err
 		}
-
-		andi, err := m.vision.Annotate("screen", reader)
+		sw, sh := robotgo.GetScreenSize()
+		andi, err := m.vision.Annotate("screen", []int{sw, sh}, reader)
 		if err != nil {
 			return plan, err
 		}
 
 		tmv := map[string]string{
 			"ScreenInfo": andi.ScreenInfo,
+			"Goal":       goal,
 		}
 
-		if len(messages) == 1 {
-			tmv["Goal"] = goal
-		}
-
+		// if len(messages) == 1 {
+		// 	tmv["Goal"] = goal
+		// } else {
+		// 	messages = Revise(goal, messages)
+		// }
+		//
 		um, err := m.tmpl.Render("planner-user", tmv)
 		if err != nil {
 			return plan, fmt.Errorf("unable to render template: %w", err)
@@ -70,21 +76,25 @@ func (m mindService) Plan(goal string) ([]Action, error) {
 
 		msg, err := m.llm.Call(messages)
 		if err != nil {
-			//  TODO: Update the following line with your application specific error handling logic
 			log.Printf("ERROR: %s", err)
 			return plan, err
 		}
-		messages = append(messages, msg)
+		messages = append(messages, openai.AssistantMessage(msg.Content))
 		action, err := ParseLLMActionResponse(msg.Content)
 		if err != nil {
 			return plan, err
 		}
 
 		plan = append(plan, action)
+		fmt.Printf("action: %+v", action)
 		if action.NextAction == "None" {
 			break
 		}
 
+		err = ExecAction(action, andi)
+		if err != nil {
+			return plan, err
+		}
 	}
 	fmt.Printf("%#v", plan)
 	return plan, nil
@@ -118,4 +128,11 @@ type Action struct {
 	NextAction string `json:"Next Action"`
 	BoxID      int    `json:"Box ID"`
 	Value      string `json:"value"`
+}
+
+func (a Action) IntValue() (int, error) {
+	if a.Value == "" {
+		return 0, errors.New("no value")
+	}
+	return strconv.Atoi(a.Value)
 }
