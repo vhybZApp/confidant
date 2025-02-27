@@ -1,100 +1,138 @@
 package mind
 
 import (
-	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/farhoud/confidant/internal/template"
-
-	"github.com/invopop/jsonschema"
+	"github.com/farhoud/confidant/pkg/omni"
+	"github.com/go-vgo/robotgo"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
 
-// Generate the JSON schema at initialization time
-var HistoricalComputerResponseSchema = GenerateSchema[Plan]()
-
-type mind struct {
+type mindService struct {
 	ready  bool
-	client *openai.Client
+	llm    *LLM
+	vision *Vision
 	tmpl   template.Template
+	screen Inspect
 }
 
-func (m mind) Ready() bool {
+func (m mindService) Ready() bool {
 	return m.ready
 }
 
-func (m mind) Plan() (Plan, error) {
-	client := m.client
-	question := "Start browser"
+func (m mindService) Plan(goal string) ([]Action, error) {
+	plan := []Action{}
 
 	sm, err := m.tmpl.Render("planner-system", nil)
 	if err != nil {
-		return Plan{}, fmt.Errorf("unable to render template: %w", err)
+		return plan, fmt.Errorf("unable to render template: %w", err)
 	}
 
-	resp, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
-		Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
-			openai.SystemMessage(sm),
-			openai.UserMessage(question),
-		}),
-		Model: openai.F("azure-gpt-4o"),
-	})
-	if err != nil {
-		// TODO: Update the following line with your application specific error handling logic
-		log.Printf("ERROR: %s", err)
-		return Plan{}, nil
+	messages := []openai.ChatCompletionMessageParamUnion{
+		openai.SystemMessage(sm),
 	}
 
-	plan := Plan{}
-	err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), &plan)
-	if err != nil {
-		//  TODO: Update the following line with your application specific error handling logic
-		log.Printf("ERROR: %s", err)
-		return plan, err
-	}
+	for {
+		reader, err := m.screen.Inspect()
+		if err != nil {
+			return plan, err
+		}
+		sw, sh := robotgo.GetScreenSize()
+		andi, err := m.vision.Annotate("screen", []int{sw, sh}, reader)
+		if err != nil {
+			return plan, err
+		}
 
+		tmv := map[string]string{
+			"ScreenInfo": andi.ScreenInfo,
+			"Goal":       goal,
+		}
+
+		// if len(messages) == 1 {
+		// 	tmv["Goal"] = goal
+		// } else {
+		// 	messages = Revise(goal, messages)
+		// }
+		//
+		um, err := m.tmpl.Render("planner-user", tmv)
+		if err != nil {
+			return plan, fmt.Errorf("unable to render template: %w", err)
+		}
+
+		msg_content := []openai.ChatCompletionContentPartUnionParam{
+			openai.ChatCompletionContentPartTextParam{Text: openai.F(um), Type: openai.F(openai.ChatCompletionContentPartTextTypeText)},
+		}
+
+		dataURl := DataURL("image/png", andi.ImageBase64)
+		messages = append(messages, openai.ChatCompletionUserMessageParam{
+			Role:    openai.F(openai.ChatCompletionUserMessageParamRoleUser),
+			Content: openai.F(append(msg_content, openai.ImagePart(dataURl))),
+		})
+
+		msg, err := m.llm.Call(messages)
+		if err != nil {
+			log.Printf("ERROR: %s", err)
+			return plan, err
+		}
+		messages = append(messages, openai.AssistantMessage(msg.Content))
+		action, err := ParseLLMActionResponse(msg.Content)
+		if err != nil {
+			return plan, err
+		}
+
+		plan = append(plan, action)
+		fmt.Printf("action: %+v", action)
+		if action.NextAction == "None" {
+			break
+		}
+
+		err = ExecAction(action, andi)
+		if err != nil {
+			return plan, err
+		}
+	}
 	fmt.Printf("%#v", plan)
 	return plan, nil
 }
 
-type Plan struct {
-	Actions []Action `json:"Actions" jsonschema_description:"The actions needed to be done to achive the goal"`
+func NewMind(url, token string, screen Inspect) *mindService {
+	if url == "" || token == "" {
+		return &mindService{ready: false}
+	}
+	oc := openai.NewClient(
+		option.WithBaseURL(url),
+		option.WithAPIKey(token),
+	)
+	omni := omni.NewClient("http://localhost:8000")
+	tmpl := template.NewTemplateEngine("./tmpl")
+
+	llm := NewLLM(oc, tmpl, "azure-gpt-4o")
+	vision := NewVision(omni)
+
+	return &mindService{
+		ready:  true,
+		llm:    &llm,
+		tmpl:   tmpl,
+		vision: &vision,
+		screen: screen,
+	}
 }
 
 type Action struct {
-	Expect string   `json:"Expect" jsonschema_description:"What is the expected resulte of this action"`
-	Output string   `json:"Output" jsonschema_description:"on which output should happend like mouse or keyboard"`
-	Func   string   `json:"Func" jsonschema_description:"The function that should be called"`
-	Args   []string `json:"Args" jsonschema_description:"The arguments that should be passed to the function"`
+	Reasoning  string `json:"Reasoning"`
+	NextAction string `json:"Next Action"`
+	BoxID      int    `json:"Box ID"`
+	Value      string `json:"value"`
 }
 
-func GenerateSchema[T any]() interface{} {
-	reflector := jsonschema.Reflector{
-		AllowAdditionalProperties: false,
-		DoNotReference:            true,
+func (a Action) IntValue() (int, error) {
+	if a.Value == "" {
+		return 0, errors.New("no value")
 	}
-	var v T
-	schema := reflector.Reflect(v)
-	return schema
-}
-
-func NewMind(url, key string) *mind {
-	m := &mind{}
-
-	if url == "" || key == "" {
-		return m
-	}
-
-	m.tmpl = template.NewTemplateEngine("./tmpl")
-
-	m.client = openai.NewClient(
-		option.WithAPIKey(key),
-		option.WithBaseURL(url),
-	)
-	m.ready = true
-
-	return m
+	return strconv.Atoi(a.Value)
 }
