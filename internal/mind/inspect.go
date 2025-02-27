@@ -1,10 +1,14 @@
 package mind
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"image/png"
 	"io"
 	"os"
+
+	"github.com/go-vgo/robotgo"
 )
 
 type Inspect interface {
@@ -16,14 +20,14 @@ type MockScreenInspector struct {
 	index uint
 }
 
-func (m MockScreenInspector) Inspect() (io.ReadSeeker, error) {
+func (m *MockScreenInspector) Inspect() (io.ReadSeeker, error) {
 	if m.index >= uint(len(m.data)) {
 		return nil, errors.New("index out of bound")
 	}
-	defer func() {
-		m.index += 1
-	}()
-	return m.data[m.index], nil
+	data := m.data[m.index]
+
+	m.index += 1
+	return data, nil
 }
 
 func NewMockScreenInspector(paths []string) Inspect {
@@ -37,8 +41,24 @@ func NewMockScreenInspector(paths []string) Inspect {
 		readers[i] = file
 	}
 
-	return MockScreenInspector{
+	return &MockScreenInspector{
 		data:  readers,
 		index: 0,
 	}
+}
+
+type RoboScreenInspector struct{}
+
+func (r RoboScreenInspector) Inspect() (io.ReadSeeker, error) {
+	img, err := robotgo.Capture()
+	if err != nil {
+		return nil, err
+	}
+
+	buff := new(bytes.Buffer)
+	if err := png.Encode(buff, img); err != nil {
+		return nil, err
+	}
+
+	return bytes.NewReader(buff.Bytes()), nil
 }
