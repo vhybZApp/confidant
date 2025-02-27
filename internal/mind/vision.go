@@ -13,14 +13,8 @@ import (
 
 var ErrBlindVision = errors.New("input is null we are blind")
 
-type BoundedBox struct {
-	X      float64 `json:"x"`
-	Y      float64 `json:"y"`
-	Height float64 `json:"height"`
-	Width  float64 `json:"width"`
-}
 type Annotation struct {
-	BoundedBox BoundedBox `json:"bbox"`
+	BoundedBox [4]float64 `json:"bbox"`
 	CType      string     `json:"type"`
 	Contetnt   string     `jsnon:"content"`
 	ID         int        `json:"id"`
@@ -30,14 +24,27 @@ type AnnotatedImage struct {
 	ImageBase64 string       `json:"image_base64"`
 	Annotations []Annotation `json:"annotations"`
 	ScreenInfo  string       `json:"screen_info"`
+	Width       int
+	Height      int
+}
+
+func (a AnnotatedImage) BoundedBox(id int) (int, int) {
+	annotation := a.Annotations[id]
+
+	x := ((annotation.BoundedBox[2] - annotation.BoundedBox[0]) / 2) + annotation.BoundedBox[0]
+	y := ((annotation.BoundedBox[3] - annotation.BoundedBox[1]) / 2) + annotation.BoundedBox[1]
+	return int(x * float64(a.Width)), int(y * float64(a.Height))
 }
 
 type Vision struct {
 	client *omni.Client
 }
 
-func (v Vision) Annotate(description string, input io.Reader) (AnnotatedImage, error) {
+func (v Vision) Annotate(description string, screenSize []int, input io.Reader) (AnnotatedImage, error) {
 	ai := AnnotatedImage{}
+
+	ai.Width = screenSize[0]
+	ai.Height = screenSize[1]
 
 	ib64, err := EncodeToBase64(input)
 	if err != nil {
@@ -59,15 +66,10 @@ func (v Vision) Annotate(description string, input io.Reader) (AnnotatedImage, e
 			ai.ScreenInfo += fmt.Sprintf("ID: %d, Icon: %s \n", i, item.Content)
 		}
 		ai.Annotations[i] = Annotation{
-			BoundedBox: BoundedBox{
-				X:      item.BBox[0],
-				Y:      item.BBox[1],
-				Height: item.BBox[2],
-				Width:  item.BBox[3],
-			},
-			CType:    item.Type,
-			Contetnt: item.Content,
-			ID:       i,
+			BoundedBox: item.BBox,
+			CType:      item.Type,
+			Contetnt:   item.Content,
+			ID:         i,
 		}
 	}
 	return ai, nil
