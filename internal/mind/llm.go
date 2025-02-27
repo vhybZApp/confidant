@@ -25,7 +25,7 @@ func (l LLM) Call(messages []openai.ChatCompletionMessageParamUnion) (openai.Cha
 		return openai.ChatCompletionMessage{}, err
 	}
 
-	fmt.Printf("llm context: %v \n llm response %v", messages, resp.Choices[0].Message)
+	// fmt.Printf("llm context: %v \n llm response %v", messages, resp.Choices[0].Message)
 
 	return resp.Choices[0].Message, nil
 }
@@ -39,6 +39,7 @@ func NewLLM(client *openai.Client, tmpl template.Template, model string) LLM {
 
 func ParseLLMActionResponse(text string) (Action, error) {
 	action := Action{}
+	fmt.Printf("llm response: %v", text)
 	re := regexp.MustCompile(`(?s)<output>\s*(\{.*?\})\s*</output>`)
 	matches := re.FindStringSubmatch(text)
 
@@ -48,15 +49,10 @@ func ParseLLMActionResponse(text string) (Action, error) {
 		// Struct to hold extracted JSON data
 		err := json.Unmarshal([]byte(jsonStr), &action)
 		if err != nil {
-			fmt.Println("Error parsing JSON:", err)
-		} else {
-			// Print the extracted JSON in a formatted way
-			formattedJSON, _ := json.MarshalIndent(action, "", "    ")
-			fmt.Println("Extracted JSON:")
-			fmt.Println(string(formattedJSON))
+			return action, err
 		}
 	} else {
-		return action, errors.New("Extract failed")
+		return action, errors.New("extract failed")
 	}
 
 	return action, nil
