@@ -47,9 +47,9 @@ func NewMockScreenInspector(paths []string) Inspect {
 	}
 }
 
-type RoboScreenInspector struct{}
+type RobotScreenInspector struct{}
 
-func (r RoboScreenInspector) Inspect() (io.ReadSeeker, error) {
+func (r RobotScreenInspector) Inspect() (io.ReadSeeker, error) {
 	img, err := robotgo.Capture()
 	if err != nil {
 		return nil, err
@@ -61,4 +61,8 @@ func (r RoboScreenInspector) Inspect() (io.ReadSeeker, error) {
 	}
 
 	return bytes.NewReader(buff.Bytes()), nil
+}
+
+func NewRobotScreenInspector() Inspect {
+	return RobotScreenInspector{}
 }

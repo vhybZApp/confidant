@@ -3,8 +3,11 @@ package mind
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"math/rand"
 	"strconv"
+	"time"
 
 	"github.com/farhoud/confidant/internal/template"
 	"github.com/farhoud/confidant/pkg/omni"
@@ -26,6 +29,7 @@ func (m mindService) Ready() bool {
 }
 
 func (m mindService) Plan(goal string) ([]Action, error) {
+	thread := NewThread(rand.Intn(10000))
 	plan := []Action{}
 
 	sm, err := m.tmpl.Render("planner-system", nil)
@@ -53,12 +57,12 @@ func (m mindService) Plan(goal string) ([]Action, error) {
 			"Goal":       goal,
 		}
 
-		// if len(messages) == 1 {
-		// 	tmv["Goal"] = goal
-		// } else {
-		// 	messages = Revise(goal, messages)
-		// }
-		//
+		if len(messages) == 1 {
+			tmv["Goal"] = goal
+		} else {
+			messages = Revise(goal, messages)
+		}
+
 		um, err := m.tmpl.Render("planner-user", tmv)
 		if err != nil {
 			return plan, fmt.Errorf("unable to render template: %w", err)
@@ -85,6 +89,11 @@ func (m mindService) Plan(goal string) ([]Action, error) {
 			return plan, err
 		}
 
+		thread.AddSnapshot(messages)
+		reader.Seek(0, io.SeekStart)
+		thread.AddAttachment(reader)
+		thread.AddAttachmentFromBase64(andi.ImageBase64)
+		thread.Store("./data")
 		plan = append(plan, action)
 		fmt.Printf("action: %+v", action)
 		if action.NextAction == "None" {
@@ -95,12 +104,13 @@ func (m mindService) Plan(goal string) ([]Action, error) {
 		if err != nil {
 			return plan, err
 		}
+		time.Sleep(2 * time.Second)
 	}
 	fmt.Printf("%#v", plan)
 	return plan, nil
 }
 
-func NewMind(url, token string, screen Inspect) *mindService {
+func NewMind(url, token, tmplPath string, screen Inspect) *mindService {
 	if url == "" || token == "" {
 		return &mindService{ready: false}
 	}
@@ -109,7 +119,7 @@ func NewMind(url, token string, screen Inspect) *mindService {
 		option.WithAPIKey(token),
 	)
 	omni := omni.NewClient("http://localhost:8000")
-	tmpl := template.NewTemplateEngine("./tmpl")
+	tmpl := template.NewTemplateEngine(tmplPath)
 
 	llm := NewLLM(oc, tmpl, "azure-gpt-4o")
 	vision := NewVision(omni)

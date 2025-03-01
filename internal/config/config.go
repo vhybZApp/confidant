@@ -56,6 +56,11 @@ func WithDotEnvConfig(conf *Config) {
 	if url != "" {
 		conf.AzurOpenAIConf.URL = url
 	}
+
+	tmpl := os.Getenv("TEMPLATE_PATH")
+	if tmpl != "" {
+		conf.TemplatePath = tmpl
+	}
 }
 
 func IsTestEnv() bool {

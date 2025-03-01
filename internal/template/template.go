@@ -2,6 +2,7 @@ package template
 
 import (
 	"errors"
+	"fmt"
 	"path"
 	"strings"
 	gt "text/template"
@@ -26,6 +27,7 @@ func (t tmpl) Render(name string, data any) (string, error) {
 	}
 
 	f := path.Join(t.path, name)
+	fmt.Printf("template file path: %s \n", f)
 	tmpl, err := gt.ParseFiles(f)
 	if err != nil {
 		err = errors.Unwrap(err)

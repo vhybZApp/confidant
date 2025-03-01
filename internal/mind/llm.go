@@ -40,20 +40,24 @@ func NewLLM(client *openai.Client, tmpl template.Template, model string) LLM {
 func ParseLLMActionResponse(text string) (Action, error) {
 	action := Action{}
 	fmt.Printf("llm response: %v", text)
-	re := regexp.MustCompile(`(?s)<output>\s*(\{.*?\})\s*</output>`)
-	matches := re.FindStringSubmatch(text)
-
-	if len(matches) > 1 {
-		jsonStr := matches[1]
-
-		// Struct to hold extracted JSON data
-		err := json.Unmarshal([]byte(jsonStr), &action)
-		if err != nil {
-			return action, err
-		}
-	} else {
-		return action, errors.New("extract failed")
+	res := []*regexp.Regexp{
+		regexp.MustCompile(`(?s)<output>\s*(\{.*?\})\s*</output>`),
+		regexp.MustCompile("(?s)```json\\n(.*?)\\n```"),
 	}
 
-	return action, nil
+	for _, re := range res {
+		matches := re.FindStringSubmatch(text)
+
+		if len(matches) > 1 {
+			jsonStr := matches[1]
+
+			// Struct to hold extracted JSON data
+			err := json.Unmarshal([]byte(jsonStr), &action)
+			if err == nil {
+				return action, nil
+			}
+		}
+	}
+
+	return action, errors.New("unable to parse action")
 }

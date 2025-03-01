@@ -10,8 +10,9 @@ func Revise(goal string, s []openai.ChatCompletionMessageParamUnion) []openai.Ch
 		switch item.(type) {
 		case openai.ChatCompletionUserMessageParam:
 			if i == 1 {
-				mem = append(mem, openai.UserMessage(goal))
+				mem = append(mem, openai.UserMessage("goal: "+goal))
 			}
+			mem = append(mem, openai.UserMessage("action done"))
 		default:
 			mem = append(mem, item)
 		}
