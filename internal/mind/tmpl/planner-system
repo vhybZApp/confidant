@@ -51,7 +51,7 @@ Another Example:
 ```json
 {
     "Reasoning": "The current screen does not show 'submit' button, I need to scroll down to see if the button is available.",
-    "Next Action": "scroll_down",
+    "Next Action": "scroll_down"
 }
 ```
 

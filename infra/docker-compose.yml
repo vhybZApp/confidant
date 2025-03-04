@@ -2,7 +2,6 @@
 services:
   openwebui:
     image: ghcr.io/open-webui/open-webui:latest
-    container_name: openwebui
     restart: unless-stopped
     ports:
       - "3000:8080"
@@ -16,7 +15,6 @@ services:
 
   llmlite:
     image: ghcr.io/berriai/litellm:main-latest
-    container_name: llmlite
     restart: unless-stopped
     ports:
       - "4000:4000"
@@ -26,6 +24,18 @@ services:
       - ./llmlite-config.yml:/app/config.yml
     command: ["--config", "/app/config.yml"]
 
+  omni-parser:
+    image: ghcr.io/teleportagents/omni-parser:latest
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - type: bind
+        source: ./data/omni-weights
+        target: /app/weights
+    command: ["run"]
+
+
 volumes:
   openwebui-data:
     # external: true
@@ -33,5 +43,5 @@ volumes:
   olamma-data:
     # external: true
     name: ${OLAMMA_VOLUME}
-  
+    
   llmlite-data:

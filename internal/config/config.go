@@ -13,6 +13,7 @@ type ConfigFunc func(*Config)
 type Config struct {
 	AzurOpenAIConf *AzurOpenAIConfig
 	TemplatePath   string
+	LLMModel       string
 }
 
 type AzurOpenAIConfig struct {
@@ -27,6 +28,7 @@ func defaultConfig() Config {
 			URL: "",
 		},
 		TemplatePath: "./tmpl",
+		LLMModel:     "gemini",
 	}
 }
 
@@ -60,6 +62,11 @@ func WithDotEnvConfig(conf *Config) {
 	tmpl := os.Getenv("TEMPLATE_PATH")
 	if tmpl != "" {
 		conf.TemplatePath = tmpl
+	}
+
+	llmm := os.Getenv("LLM_Model")
+	if llmm != "" {
+		conf.LLMModel = llmm
 	}
 }
 

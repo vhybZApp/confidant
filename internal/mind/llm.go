@@ -40,6 +40,8 @@ func NewLLM(client *openai.Client, tmpl template.Template, model string) LLM {
 func ParseLLMActionResponse(text string) (Action, error) {
 	action := Action{}
 	fmt.Printf("llm response: %v", text)
+	text = FixTrailingCommas(text)
+	fmt.Printf("llm response fixed: %v", text)
 	res := []*regexp.Regexp{
 		regexp.MustCompile(`(?s)<output>\s*(\{.*?\})\s*</output>`),
 		regexp.MustCompile("(?s)```json\\n(.*?)\\n```"),
@@ -60,4 +62,14 @@ func ParseLLMActionResponse(text string) (Action, error) {
 	}
 
 	return action, errors.New("unable to parse action")
+}
+
+// FixTrailingCommas removes trailing commas from JSON
+func FixTrailingCommas(jsonStr string) string {
+	// Regex to find trailing commas before closing braces or brackets
+	re := regexp.MustCompile(`,\s*([\]}])`)
+	if !re.MatchString(jsonStr) {
+		return jsonStr
+	}
+	return re.ReplaceAllString(jsonStr, "$1")
 }

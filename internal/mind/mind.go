@@ -110,7 +110,7 @@ func (m mindService) Plan(goal string) ([]Action, error) {
 	return plan, nil
 }
 
-func NewMind(url, token, tmplPath string, screen Inspect) *mindService {
+func NewMind(url, token, tmplPath, llmModel string, screen Inspect) *mindService {
 	if url == "" || token == "" {
 		return &mindService{ready: false}
 	}
@@ -121,7 +121,7 @@ func NewMind(url, token, tmplPath string, screen Inspect) *mindService {
 	omni := omni.NewClient("http://localhost:8000")
 	tmpl := template.NewTemplateEngine(tmplPath)
 
-	llm := NewLLM(oc, tmpl, "azure-gpt-4o")
+	llm := NewLLM(oc, tmpl, llmModel)
 	vision := NewVision(omni)
 
 	return &mindService{

@@ -1,6 +1,7 @@
 # Project variables
 APP_NAME = confidant
 BUILD_DIR = bin
+OMNI_WEIGHTS = ./omni-weights
 GO_FILES = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 
 # Define colors for output
@@ -79,12 +80,17 @@ deps:
 	@go mod verify
 	@echo "$(GREEN)✅ Dependencies installed!$(RESET)"
 
-## 🎭 Generate mock files (if using mockery)
-.PHONY: mocks
-mocks:
-	@echo "$(CYAN)🎭 Generating mocks...$(RESET)"
-	@mockery --all --output=internal/mocks --case=underscore
-	@echo "$(GREEN)✅ Mocks generated!$(RESET)"
+## 🎭 Start AI Services
+.PHONY: up
+up:
+	@echo "$(CYAN)🎭 Start AI Services...$(RESET)"
+	@cd ./infra/omni-parser
+	ifeq ("$(wildcard $(OMNI_WEIGHTS))", "")
+    @echo "Start downloading"
+		docker compose run omni-parser dl
+  endif
+	@docker compose up -d
+	@echo "$(GREEN)✅ Services started successfully!$(RESET)"
 
 ## 📖 Show available commands
 .PHONY: help

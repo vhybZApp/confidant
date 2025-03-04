@@ -12,43 +12,36 @@ Confidant is a lightweight automation tool designed to bridge the gap between st
 ## Installation
 
 ### Prerequisites
+
 - Go 1.18+ installed on your system
+- make
 
 ### Clone and Build
+
 ```sh
-git clone https://github.com/your-org/confidant.git
+git clone https://github.com/TeleportAgents/confidant.git
 cd confidant
-go build -o confidant
+make build
 ```
 
 ## Usage
 
-Run Confidant as a lightweight server/daemon:
+Start AI Services:
+
 ```sh
-./confidant
+make up
 ```
 
-You can then send natural language commands via API or CLI.
+Run your request:
 
-## Configuration
-
-Modify the configuration file (`config.yaml`) to customize behavior:
-```yaml
-server:
-  port: 8080
-  log_level: info
-```
-
-## API Example
-
-To send an action request:
 ```sh
-curl -X POST http://localhost:8080/action -d '{"command": "open browser"}' -H "Content-Type: application/json"
+./bin/confidant [request]
 ```
 
 ## Contributing
 
 We welcome contributions! To get started:
+
 1. Fork the repository
 2. Create a new branch
 3. Commit your changes
