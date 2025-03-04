@@ -4,7 +4,7 @@ Confidant is a lightweight automation tool designed to bridge the gap between st
 
 ## Demo
 
-<a href="https://drive.google.com/uc?export=view&id=1daQctDIyf0xhRMkDn5de5wvO8shN0D5G"><img src="https://drive.google.com/uc?export=view&id=1daQctDIyf0xhRMkDn5de5wvO8shN0D5G" style="width: 500px; max-width: 100%; height: auto" title="Click for the larger version." /></a>
+![image](https://drive.google.com/uc?export=view&id=1daQctDIyf0xhRMkDn5de5wvO8shN0D5G)
 
 - Automates UI interactions (mouse, keyboard, and more)
 - Executes actions based on natural language commands
