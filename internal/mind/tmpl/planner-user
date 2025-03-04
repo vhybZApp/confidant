@@ -2,5 +2,3 @@
 Goal: {{ .Goal }}
 {{ end }}
 
-Here is the list of all detected bounding boxes by IDs on the screen and their description:
-{{ .ScreenInfo }}

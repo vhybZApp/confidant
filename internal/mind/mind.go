@@ -20,8 +20,8 @@ type mindService struct {
 	ready  bool
 	llm    *LLM
 	vision *Vision
-	tmpl   template.Template
 	screen Inspect
+	mem    *Memory
 }
 
 func (m mindService) Ready() bool {
@@ -31,15 +31,6 @@ func (m mindService) Ready() bool {
 func (m mindService) Plan(goal string) ([]Action, error) {
 	thread := NewThread(rand.Intn(10000))
 	plan := []Action{}
-
-	sm, err := m.tmpl.Render("planner-system", nil)
-	if err != nil {
-		return plan, fmt.Errorf("unable to render template: %w", err)
-	}
-
-	messages := []openai.ChatCompletionMessageParamUnion{
-		openai.SystemMessage(sm),
-	}
 
 	for {
 		reader, err := m.screen.Inspect()
@@ -52,50 +43,32 @@ func (m mindService) Plan(goal string) ([]Action, error) {
 			return plan, err
 		}
 
-		tmv := map[string]string{
-			"ScreenInfo": andi.ScreenInfo,
-			"Goal":       goal,
+		tmv := map[string]interface{}{
+			"ScreenInfo":  andi.ScreenInfo,
+			"Goal":        goal,
+			"ImageBase64": andi.ImageBase64,
 		}
 
-		if len(messages) == 1 {
-			tmv["Goal"] = goal
-		} else {
-			messages = Revise(goal, messages)
-		}
-
-		um, err := m.tmpl.Render("planner-user", tmv)
-		if err != nil {
-			return plan, fmt.Errorf("unable to render template: %w", err)
-		}
-
-		msg_content := []openai.ChatCompletionContentPartUnionParam{
-			openai.ChatCompletionContentPartTextParam{Text: openai.F(um), Type: openai.F(openai.ChatCompletionContentPartTextTypeText)},
-		}
-
-		dataURl := DataURL("image/png", andi.ImageBase64)
-		messages = append(messages, openai.ChatCompletionUserMessageParam{
-			Role:    openai.F(openai.ChatCompletionUserMessageParamRoleUser),
-			Content: openai.F(append(msg_content, openai.ImagePart(dataURl))),
-		})
-
-		msg, err := m.llm.Call(messages)
+		mem, err := m.mem.Match(goal, tmv, thread.History)
+		msg, err := m.llm.Call(mem)
 		if err != nil {
 			log.Printf("ERROR: %s", err)
 			return plan, err
 		}
-		messages = append(messages, openai.AssistantMessage(msg.Content))
+
+		mem = append(mem, openai.AssistantMessage(msg.Content))
+		fmt.Printf("Assistant message: %s", msg.Content)
 		action, err := ParseLLMActionResponse(msg.Content)
 		if err != nil {
 			return plan, err
 		}
 
-		thread.AddSnapshot(messages)
+		thread.AddSnapshot(mem)
 		reader.Seek(0, io.SeekStart)
 		thread.AddAttachment(reader)
 		thread.AddAttachmentFromBase64(andi.ImageBase64)
 		thread.Store("./data")
 		plan = append(plan, action)
-		fmt.Printf("action: %+v", action)
 		if action.NextAction == "None" {
 			break
 		}
@@ -104,7 +77,7 @@ func (m mindService) Plan(goal string) ([]Action, error) {
 		if err != nil {
 			return plan, err
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 	fmt.Printf("%#v", plan)
 	return plan, nil
@@ -120,14 +93,15 @@ func NewMind(url, token, tmplPath, llmModel string, screen Inspect) *mindService
 	)
 	omni := omni.NewClient("http://localhost:8000")
 	tmpl := template.NewTemplateEngine(tmplPath)
+	mem := NewMemory(tmpl)
 
-	llm := NewLLM(oc, tmpl, llmModel)
+	llm := NewLLM(oc, llmModel)
 	vision := NewVision(omni)
 
 	return &mindService{
 		ready:  true,
 		llm:    &llm,
-		tmpl:   tmpl,
+		mem:    &mem,
 		vision: &vision,
 		screen: screen,
 	}

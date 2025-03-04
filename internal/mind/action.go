@@ -33,7 +33,7 @@ func ExecAction(a Action, ai AnnotatedImage) error {
 		robotgo.MoveSmooth(x, y)
 		robotgo.Click()
 		robotgo.TypeStr(a.Value)
-		robotgo.KeyPress("enter")
+		// robotgo.KeyPress("enter")
 	case "wait":
 		time.Sleep(time.Second * 3)
 	default:

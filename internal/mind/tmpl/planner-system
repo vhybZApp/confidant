@@ -6,6 +6,9 @@ You may be given some history plan and actions, this is the response from the pr
 You should carefully consider your plan base on the task, screenshot, and history actions.
 
 
+Here is the list of all detected bounding boxes by IDs on the screen and their description:
+{{ .ScreenInfo }}
+
 Your available "Next Action" only include:
 - type: types a string of text.
 - left_click: move mouse to box id and left clicks.

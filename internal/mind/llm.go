@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"regexp"
 
-	"github.com/farhoud/confidant/internal/template"
 	"github.com/openai/openai-go"
 )
 
@@ -30,7 +28,7 @@ func (l LLM) Call(messages []openai.ChatCompletionMessageParamUnion) (openai.Cha
 	return resp.Choices[0].Message, nil
 }
 
-func NewLLM(client *openai.Client, tmpl template.Template, model string) LLM {
+func NewLLM(client *openai.Client, model string) LLM {
 	return LLM{
 		client: client,
 		model:  model,
@@ -39,15 +37,21 @@ func NewLLM(client *openai.Client, tmpl template.Template, model string) LLM {
 
 func ParseLLMActionResponse(text string) (Action, error) {
 	action := Action{}
-	fmt.Printf("llm response: %v", text)
 	text = FixTrailingCommas(text)
-	fmt.Printf("llm response fixed: %v", text)
 	res := []*regexp.Regexp{
+		nil,
 		regexp.MustCompile(`(?s)<output>\s*(\{.*?\})\s*</output>`),
 		regexp.MustCompile("(?s)```json\\n(.*?)\\n```"),
 	}
 
 	for _, re := range res {
+		if re == nil {
+			err := json.Unmarshal([]byte(text), &action)
+			if err == nil {
+				return action, nil
+			}
+			continue
+		}
 		matches := re.FindStringSubmatch(text)
 
 		if len(matches) > 1 {
