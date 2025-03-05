@@ -84,12 +84,13 @@ deps:
 .PHONY: up
 up:
 	@echo "$(CYAN)🎭 Start AI Services...$(RESET)"
-	@cd ./infra/omni-parser
-	ifeq ("$(wildcard $(OMNI_WEIGHTS))", "")
-    @echo "Start downloading"
-		docker compose run omni-parser dl
-  endif
-	@docker compose up -d
+ifeq ("$(wildcard ./infra/data/$(OMNI_WEIGHTS))", "")
+	@cd ./infra && \
+	echo "$(CYAN)🎭 Start Download weights...$(RESET)" && \
+	docker compose run -u $(id -u):$(id -g) -t --rm omni-parser /app/run.sh dl 
+endif
+	@cd ./infra && \
+	docker compose up -d
 	@echo "$(GREEN)✅ Services started successfully!$(RESET)"
 
 ## 📖 Show available commands

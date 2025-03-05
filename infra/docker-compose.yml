@@ -26,14 +26,20 @@ services:
 
   omni-parser:
     image: ghcr.io/teleportagents/omni-parser:latest
+    # runtime: nvidia
+    # environment:
+    #   - NVIDIA_VISIBLE_DEVICES=all
+    #   - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    build: .
     restart: unless-stopped
+    entrypoint: ""
     ports:
       - "8000:8000"
     volumes:
       - type: bind
         source: ./data/omni-weights
         target: /app/weights
-    command: ["run"]
+    command: ["conda", "run", "-n", "omni", "/bin/bash", "-c", "./run.sh run", "--no-capture-output"]
 
 
 volumes:

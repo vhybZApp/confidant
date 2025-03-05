@@ -17,6 +17,8 @@ Confidant is a lightweight automation tool designed to bridge the gap between st
 
 - Go 1.18+ installed on your system
 - make
+- docker
+- docker-compose
 
 ### Clone and Build
 
@@ -37,7 +39,7 @@ make up
 Run your request:
 
 ```sh
-./bin/confidant [request]
+go run ./cmd/main.go "search latest infected mushroom track using browser and then play it in spotify app"
 ```
 
 ## Contributing
