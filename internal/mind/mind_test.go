@@ -11,14 +11,14 @@ import (
 func TestOpenAIMindWithEmptyCredential(t *testing.T) {
 	url := ""
 	token := ""
-	mind := NewMind(url, token, "", "", nil)
+	mind := NewMind(url, token, "", "", "", nil)
 	assert.False(t, mind.Ready(), "when new mind create with empty url and token it should not ready")
 }
 
 func TestOpenMindAIWithValidCredentail(t *testing.T) {
 	url := "https://api.openai.com/v1/completions"
 	token := "sk-"
-	mind := NewMind(url, token, "", "", nil)
+	mind := NewMind(url, token, "", "", "", nil)
 	assert.True(t, mind.Ready(), "when new mind create with valid url and token it should ready")
 }
 
@@ -26,7 +26,7 @@ func TestOpenAIMindWithEmptyRequest(t *testing.T) {
 	conf := config.Configuration(config.WithDotEnvConfig)
 	assert.NotEmpty(t, conf.AzurOpenAIConf.Key)
 	assert.NotEmpty(t, conf.AzurOpenAIConf.URL)
-	mind := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key, conf.TemplatePath, conf.LLMModel, nil)
+	mind := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key, conf.TemplatePath, conf.LLMModel, conf.DeviceType, nil)
 	assert.True(t, mind.Ready(), "new mind should be ready")
 }
 
@@ -46,7 +46,7 @@ func TestMockScreenOpenSafari(t *testing.T) {
 	conf := config.Configuration(config.WithDotEnvConfig)
 
 	mvi := NewMockScreenInspector([]string{"test_data/mac-desktop.jpg", "test_data/mac_safari.png"})
-	mind := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key, conf.TemplatePath, conf.LLMModel, mvi)
+	mind := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key, conf.TemplatePath, conf.LLMModel, conf.DeviceType, mvi)
 
 	plan, err := mind.Plan("open safari")
 
@@ -60,7 +60,7 @@ func TestOpenChrome(t *testing.T) {
 	conf := config.Configuration(config.WithDotEnvConfig)
 
 	mvi := NewRobotScreenInspector()
-	mind := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key, conf.TemplatePath, conf.LLMModel, mvi)
+	mind := NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key, conf.TemplatePath, conf.LLMModel, conf.DeviceType, mvi)
 
 	plan, err := mind.Plan("open safari")
 

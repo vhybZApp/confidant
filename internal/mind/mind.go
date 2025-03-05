@@ -22,6 +22,7 @@ type mindService struct {
 	vision *Vision
 	screen Inspect
 	mem    *Memory
+	divt   string
 }
 
 func (m mindService) Ready() bool {
@@ -47,6 +48,7 @@ func (m mindService) Plan(goal string) ([]Action, error) {
 			"ScreenInfo":  andi.ScreenInfo,
 			"Goal":        goal,
 			"ImageBase64": andi.ImageBase64,
+			"DeviceType":  m.divt,
 		}
 
 		mem, err := m.mem.Match(goal, tmv, thread.History)
@@ -83,7 +85,7 @@ func (m mindService) Plan(goal string) ([]Action, error) {
 	return plan, nil
 }
 
-func NewMind(url, token, tmplPath, llmModel string, screen Inspect) *mindService {
+func NewMind(url, token, tmplPath, llmModel, deviceType string, screen Inspect) *mindService {
 	if url == "" || token == "" {
 		return &mindService{ready: false}
 	}
@@ -104,6 +106,7 @@ func NewMind(url, token, tmplPath, llmModel string, screen Inspect) *mindService
 		mem:    &mem,
 		vision: &vision,
 		screen: screen,
+		divt:   deviceType,
 	}
 }
 

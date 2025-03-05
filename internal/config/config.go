@@ -14,6 +14,7 @@ type Config struct {
 	AzurOpenAIConf *AzurOpenAIConfig
 	TemplatePath   string
 	LLMModel       string
+	DeviceType     string
 }
 
 type AzurOpenAIConfig struct {
@@ -29,6 +30,7 @@ func defaultConfig() Config {
 		},
 		TemplatePath: "./tmpl",
 		LLMModel:     "gemini",
+		DeviceType:   "Mac",
 	}
 }
 
@@ -67,6 +69,11 @@ func WithDotEnvConfig(conf *Config) {
 	llmm := os.Getenv("LLM_Model")
 	if llmm != "" {
 		conf.LLMModel = llmm
+	}
+
+	device := os.Getenv("DEVICE_TYPE")
+	if device != "" {
+		conf.DeviceType = device
 	}
 }
 
