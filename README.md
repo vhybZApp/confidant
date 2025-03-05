@@ -28,19 +28,56 @@ cd confidant
 make build
 ```
 
-## Usage
+## Usage  
 
-Start AI Services:
+### Step 1: Configure API Keys  
+
+1. Copy the default environment file:  
+
+   ```sh
+   cp infra/default.env infra/.env
+   ```  
+
+2. Open `infra/.env` and set your LLM model and API key.  
+
+### Step 2: Set Up the Application  
+
+1. Copy the default app environment file:  
+
+   ```sh
+   cp default.env .env
+   ```  
+
+2. Open `.env` and configure the following:  
+   - **LLM_MODEL**: Set this to match the model you configured in `infra/.env`. Example:  
+
+     ```env
+     LLM_MODEL=gemini
+     ```  
+
+   - **DEVICE_TYPE**: Set this to match your device. Example:  
+
+     ```env
+     DEVICE_TYPE="Gnome Linux"
+     ```  
+
+     (For macOS, use `"Mac"`, and adjust accordingly for other systems.)  
+
+### Step 3: Start AI Services  
+
+Run the following command to start the required services:  
 
 ```sh
 make up
-```
+```  
 
-Run your request:
+### Step 4: Run Your Request  
+
+Execute the application with a sample request:  
 
 ```sh
 go run ./cmd/main.go "search latest infected mushroom track using browser and then play it in spotify app"
-```
+```  
 
 ## Contributing
 
