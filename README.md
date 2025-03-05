@@ -2,14 +2,14 @@
 
 Confidant is a lightweight automation tool designed to bridge the gap between static software interfaces and the dynamic real world. It enables applications to execute actions autonomously, interacting with UI elements, peripherals, and external devices.
 
-## Demo
-
-![image](https://drive.google.com/uc?export=view&id=1daQctDIyf0xhRMkDn5de5wvO8shN0D5G)
-
 - Automates UI interactions (mouse, keyboard, and more)
 - Executes actions based on natural language commands
 - Works across various platforms, from desktop environments to edge devices
 - Designed for minimal resource usage, written in Go
+
+## Demo
+
+![Confidant Spotify](https://raw.githubusercontent.com/TeleportAgents/assets/main/ConfidantSpotify.gif)
 
 ## Installation
 
