@@ -15,6 +15,7 @@ type Config struct {
 	TemplatePath   string
 	LLMModel       string
 	DeviceType     string
+	MockScreen     bool
 }
 
 type AzurOpenAIConfig struct {
@@ -31,6 +32,7 @@ func defaultConfig() Config {
 		TemplatePath: "./tmpl",
 		LLMModel:     "gemini",
 		DeviceType:   "Mac",
+		MockScreen:   false,
 	}
 }
 

@@ -13,40 +13,60 @@ import (
 	"github.com/openai/openai-go"
 )
 
-type Snapshot = []openai.ChatCompletionMessageParamUnion
+type Snapshot struct {
+	Attachments []io.Reader `json:"Attachments"`
+	Messages    []openai.ChatCompletionMessageParamUnion
+	Agent       string
+}
 
 type Thread struct {
-	ID          int         `json:"id"`
-	Attachments []io.Reader `json:"Attachments"`
-	History     []Snapshot  `json:"History"`
-	mutex       sync.Mutex  // To handle concurrent writes
+	ID       int        `json:"id"`
+	History  []Snapshot `json:"History"`
+	Acheived bool
+	mutex    sync.Mutex // To handle concurrent writes
 }
 
 // NewThread creates a new thread instance
 func NewThread(id int) *Thread {
 	return &Thread{
-		ID:          id,
-		Attachments: []io.Reader{},
-		History:     []Snapshot{},
+		ID:      id,
+		History: []Snapshot{},
 	}
 }
 
-func (t *Thread) AddAttachmentFromBase64(encoded string) error {
+func (t *Thread) GoalAcheived() {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	t.Acheived = true
+}
+
+func (t *Thread) LatestSnapShot(agent string) *Snapshot {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	i := len(t.History) - 1
+	for {
+		if t.History[i].Agent == agent {
+			return &t.History[i]
+		}
+		i--
+		if i < 0 {
+			return nil
+		}
+	}
+}
+
+func (t *Snapshot) AddAttachmentFromBase64(encoded string) error {
 	data, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
 		return fmt.Errorf("failed to decode base64 string: %w", err)
 	}
 	buffer := bytes.NewBuffer(data)
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
 	t.Attachments = append(t.Attachments, buffer)
 	return nil
 }
 
 // AddAttachment adds an attachment to the thread
-func (t *Thread) AddAttachment(attachment io.Reader) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
+func (t *Snapshot) AddAttachment(attachment io.Reader) {
 	t.Attachments = append(t.Attachments, attachment)
 }
 
@@ -94,17 +114,21 @@ func (t *Thread) Store(basePath string) error {
 		return fmt.Errorf("failed to create attachments directory: %w", err)
 	}
 
-	for i, attachment := range t.Attachments {
-		filePath := filepath.Join(attachmentsDir, fmt.Sprintf("attachment_%d", i))
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			file, err := os.Create(filePath)
-			if err != nil {
-				return fmt.Errorf("failed to create attachment file: %w", err)
+	i := 0
+	for _, snapshot := range t.History {
+		for _, attachment := range snapshot.Attachments {
+			filePath := filepath.Join(attachmentsDir, fmt.Sprintf("attachment_%s_%d", snapshot.Agent, i))
+			if _, err := os.Stat(filePath); os.IsNotExist(err) {
+				file, err := os.Create(filePath)
+				if err != nil {
+					return fmt.Errorf("failed to create attachment file: %w", err)
+				}
+				defer file.Close()
+				if _, err := io.Copy(file, attachment); err != nil {
+					return fmt.Errorf("failed to write attachment file: %w", err)
+				}
 			}
-			defer file.Close()
-			if _, err := io.Copy(file, attachment); err != nil {
-				return fmt.Errorf("failed to write attachment file: %w", err)
-			}
+			i++
 		}
 	}
 
