@@ -83,12 +83,17 @@ func (o operator) Match(goal string, inputInfo map[string]interface{}, thread *T
 		return nil, fmt.Errorf("unable to render template: %w", err)
 	}
 	mem := []openai.ChatCompletionMessageParamUnion{}
-	s := thread.LatestSnapShot("operator").Messages
-	// plan := thread.LatestSnapShot("planner").Messages[len(thread.LatestSnapShot("planner").Messages)-1]
-	if len(s) < 1 {
+
+	so := thread.LatestSnapShot("operator")
+	sp := thread.LatestSnapShot("planner")
+	if so == nil {
 		mem = append(mem, openai.SystemMessage(sm))
+		if sp != nil && len(sp.Messages) > 1 {
+			msgs := sp.Messages
+			mem = append(mem, msgs[len(msgs)-1])
+		}
 	} else {
-		for i, item := range s {
+		for i, item := range so.Messages {
 			switch item.(type) {
 			case openai.ChatCompletionSystemMessageParam:
 				mem = append(mem, openai.SystemMessage(sm))
@@ -114,11 +119,12 @@ func (o operator) Match(goal string, inputInfo map[string]interface{}, thread *T
 	return mem, nil
 }
 
-func NewOperator(llm *LLM, tmpl template.Template, screen Inspect, vision Vision, deviceType string) *planner {
-	return &planner{
+func NewOperator(llm *LLM, tmpl template.Template, screen Inspect, vision Vision, deviceType string) *operator {
+	return &operator{
 		llm:    llm,
 		tmpl:   tmpl,
 		screen: screen,
+		vision: vision,
 		divt:   deviceType,
 	}
 }
