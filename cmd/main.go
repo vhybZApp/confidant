@@ -15,8 +15,8 @@ func main() {
 
 	fmt.Printf("start app with configs: %+v\n", conf)
 	mvi := mind.NewRobotScreenInspector()
-	m := mind.NewMind(conf.AzurOpenAIConf.URL, conf.AzurOpenAIConf.Key, conf.TemplatePath, conf.LLMModel, conf.DeviceType, mvi)
-	_, err := m.Plan(args[0])
+	m := mind.NewApp(*conf, mvi)
+	err := m.Run(args[0])
 	if err != nil {
 		panic(err)
 	}

@@ -1,0 +1,3 @@
+{{ if .Plan }}
+Plan: {{ .Plan }}
+{{ end }}
