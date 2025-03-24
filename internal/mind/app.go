@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/rand"
 	"strconv"
+	"time"
 
 	"github.com/farhoud/confidant/internal/config"
 	"github.com/farhoud/confidant/internal/template"
@@ -13,10 +14,11 @@ import (
 )
 
 type appService struct {
-	ready    bool
-	conf     config.Config
-	planner  Agent
-	operator Agent
+	ready      bool
+	conf       config.Config
+	planner    Agent
+	operator   Agent
+	controller Agent
 }
 
 func (m appService) Ready() bool {
@@ -30,10 +32,15 @@ func (m appService) Run(goal string) error {
 	thread := NewThread(rand.Intn(10000))
 	m.planner.Achieve(goal, thread)
 	for {
-		if thread.Acheived {
-			return nil
+		m.controller.Achieve(goal, thread)
+		for {
+			if thread.Acheived {
+				break
+			}
+			m.operator.Achieve(goal, thread)
+			time.Sleep(time.Second * 5)
 		}
-		m.operator.Achieve(goal, thread)
+		thread.Acheived = false
 	}
 	return nil
 }
@@ -52,12 +59,14 @@ func NewApp(conf config.Config, screen Inspect) *appService {
 	llm := NewLLM(oc, conf.LLMModel)
 	vision := NewVision(omni)
 	p := NewPlanner(&llm, tmpl, screen, conf.DeviceType)
+	c := NewController(&llm, tmpl, screen, conf.DeviceType)
 	o := NewOperator(&llm, tmpl, screen, vision, conf.DeviceType)
 	return &appService{
-		ready:    true,
-		conf:     conf,
-		planner:  p,
-		operator: o,
+		ready:      true,
+		conf:       conf,
+		planner:    p,
+		operator:   o,
+		controller: c,
 	}
 }
 

@@ -17,6 +17,7 @@ type operator struct {
 	vision Vision
 	divt   string
 	llm    *LLM
+	goal   string
 }
 
 func (o operator) Achieve(goal string, thread *Thread) error {
@@ -28,6 +29,11 @@ func (o operator) Achieve(goal string, thread *Thread) error {
 	andi, err := o.vision.Annotate("screen", []int{sw, sh}, reader)
 	if err != nil {
 		return err
+	}
+
+	sc := thread.LatestSnapShot("controller")
+	if sc != nil && len(sc.Messages) > 1 {
+		goal = sc.Messages[len(sc.Messages)-1].(openai.ChatCompletionAssistantMessageParam).Content.String()
 	}
 
 	tmv := map[string]interface{}{
@@ -93,17 +99,22 @@ func (o operator) Match(goal string, inputInfo map[string]interface{}, thread *T
 			mem = append(mem, msgs[len(msgs)-1])
 		}
 	} else {
-		for i, item := range so.Messages {
-			switch item.(type) {
-			case openai.ChatCompletionSystemMessageParam:
-				mem = append(mem, openai.SystemMessage(sm))
-			case openai.ChatCompletionUserMessageParam:
-				if i == 1 {
-					continue
+		if goal != o.goal {
+			o.goal = goal
+			mem = append(mem, openai.SystemMessage(sm))
+		} else {
+			for i, item := range so.Messages {
+				switch item.(type) {
+				case openai.ChatCompletionSystemMessageParam:
+					mem = append(mem, openai.SystemMessage(sm))
+				case openai.ChatCompletionUserMessageParam:
+					if i == 1 {
+						continue
+					}
+					mem = append(mem, openai.UserMessage("action done"))
+				default:
+					mem = append(mem, item)
 				}
-				mem = append(mem, openai.UserMessage("action done"))
-			default:
-				mem = append(mem, item)
 			}
 		}
 	}

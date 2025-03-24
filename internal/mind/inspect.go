@@ -50,6 +50,7 @@ func NewMockScreenInspector(paths []string) Inspect {
 type RobotScreenInspector struct{}
 
 func (r RobotScreenInspector) Inspect() (io.ReadSeeker, error) {
+	robotgo.DisplayID = 0
 	img, err := robotgo.Capture()
 	if err != nil {
 		return nil, err

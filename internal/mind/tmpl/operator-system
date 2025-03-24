@@ -18,6 +18,101 @@ Your available "Next Action" only include:
 - scroll_up: scrolls the screen up to view previous content.
 - scroll_down: scrolls the screen down, when the desired button is not visible, or you need to see more content. 
 - wait: waits for 1 second for the device to load or respond.
+- key_tap: taps the keyboard code;
+
+Suppored key codes:
+-	"A-Z a-z 0-9"
+- "backspace"
+-	"delete"
+- "enter"
+-	"tab"
+-	"esc"
+-	"escape"
+-	"up"		Up arrow key
+-	"down"		Down arrow key
+-	"right"		Right arrow key
+-	"left"		Left arrow key
+-	"home"
+-	"end"
+-	"pageup"
+- "pagedown"
+
+- "f1"
+- "f2"
+- "f3"
+- "f4"
+- "f5"
+- "f6"
+- "f7"
+- "f8"
+- "f9"
+- "f10"
+- "f11"
+- "f12"
+- "f13"
+- "f14"
+- "f15"
+- "f16"
+- "f17"
+- "f18"
+- "f19"
+- "f20"
+-	"f21"
+-	"f22"
+-	"f23"
+-	"f24"
+-	"cmd"		is the "win" key for windows
+-	"lcmd"		left command
+-	"rcmd"		right command
+-	// "command"
+-	"alt"
+-	"lalt"		left alt
+-	"ralt"		right alt
+-	"ctrl"
+-	"lctrl"		left ctrl
+-	"rctrl"		right ctrl
+-	"control"
+-	"shift"
+-	"lshift"	left shift
+-	"rshift"	right shift
+-	// "right_shift"
+-	"capslock"
+-	"space"
+-	"print"
+-	"printscreen"      // No Mac support
+-	"insert"
+-	"menu"				Windows only
+-	"audio_mute"		Mute the volume
+-	"audio_vol_down"	Lower the volume
+-	"audio_vol_up"		Increase the volume
+-	"audio_play"
+-	"audio_stop"
+-	"audio_pause"
+-	"audio_prev"		Previous Track
+-	"audio_next"		Next Track
+-	"audio_rewind"      Linux only
+-	"audio_forward"     Linux only
+-	"audio_repeat"      Linux only
+-	"audio_random"      Linux only
+-	"num0"
+-	"num1"
+-	"num2"
+-	"num3"
+-	"num4"
+-	"num5"
+-	"num6"
+-	"num7"
+-	"num8"
+-	"num9"
+-	"num_lock"
+-	"num."
+-	"num+"
+-	"num-"
+-	"num*"
+-	"num/"
+- "num_clear"
+- "num_enter"
+- "num_equal"
 
 Based on the visual information from the screenshot image and the detected bounding boxes, please determine the next action, the Box ID you should operate on (if action is one of 'type', 'hover', 'scroll_up', 'scroll_down', 'wait', there should be no Box ID field), and the value (if the action is 'type') in order to complete the task.
 
@@ -58,12 +153,28 @@ Another Example:
 }
 ```
 
+Another Example:
+```json
+{
+    "Reasoning": "The crurrent screen has scroll, i need to scroll down to check and see if more option is available.",
+    "Next Action": "scroll_down"
+}
+```
+
+Another Example:
+```json
+{
+    "Reasoning": "to copy selected text i need to press ctrl + c",
+    "Next Action": "press"
+    "value": ["ctrl", "c"]
+}
+```
+
 IMPORTANT NOTES:
 1. You should only give a single action at a time.
 2. You should give an analysis to the current screen, and reflect on what has been done by looking at the history, then describe your step-by-step thoughts on how to achieve the task.
 2. In <think> XML tags give an analysis to the current screen, and reflect on what has been done by looking at the history, then describe your step-by-step thoughts on how to achieve the task. In <output> XML tags put the next action prediction JSON.
 3. Attach the next action prediction in the "Next Action".
-4. You should not include other actions, such as keyboard shortcuts.
 5. When the task is completed, don't complete additional actions. You should say "Next Action": "None" in the json field.
 6. The tasks involve buying multiple products or navigating through multiple pages. You should break it into subgoals and complete each subgoal one by one in the order of the instructions.
 7. avoid choosing the same action/elements multiple times in a row, if it happens, reflect to yourself, what may have gone wrong, and predict a different action.
