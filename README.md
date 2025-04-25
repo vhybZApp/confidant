@@ -2,10 +2,10 @@
 
 Confidant is a lightweight automation tool designed to bridge the gap between static software interfaces and the dynamic real world. It enables applications to execute actions autonomously, interacting with UI elements, peripherals, and external devices.
 
-- Automates UI interactions (mouse, keyboard, and more)
-- Executes actions based on natural language commands
-- Works across various platforms, from desktop environments to edge devices
-- Designed for minimal resource usage, written in Go
+- Automates UI interactions (mouse, keyboard, and more).
+- Executes actions based on natural language commands.
+- Works across various platforms, from desktop environments to edge devices.
+- Designed for minimal resource usage, written in Go.
 
 ## Demo
 
