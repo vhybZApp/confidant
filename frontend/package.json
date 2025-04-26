@@ -1,0 +1,22 @@
+{
+  "name": "base",
+  "version": "1.0.0",
+  "description": "",
+  "main": "",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.2.25"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "naive-ui": "^2.41.0",
+    "vfonts": "^0.0.3",
+    "vite": "^6.2.5"
+  },
+  "keywords": [],
+  "author": "farhoud.m7"
+}
