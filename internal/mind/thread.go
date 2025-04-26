@@ -13,9 +13,12 @@ import (
 	"github.com/openai/openai-go"
 )
 
+type Info = map[string]interface{}
+
 type Snapshot struct {
 	Attachments []io.Reader `json:"Attachments"`
 	Messages    []openai.ChatCompletionMessageParamUnion
+	Params      Info
 	Agent       string
 }
 

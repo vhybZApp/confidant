@@ -13,7 +13,7 @@ import (
 	"github.com/openai/openai-go/option"
 )
 
-type appService struct {
+type runnerService struct {
 	ready      bool
 	conf       config.Config
 	planner    Agent
@@ -21,11 +21,11 @@ type appService struct {
 	controller Agent
 }
 
-func (m appService) Ready() bool {
+func (m runnerService) Ready() bool {
 	return m.ready
 }
 
-func (m appService) Run(goal string) error {
+func (m runnerService) Run(goal string) error {
 	if !m.ready {
 		return errors.New("mind is not ready")
 	}
@@ -45,9 +45,9 @@ func (m appService) Run(goal string) error {
 	return nil
 }
 
-func NewApp(conf config.Config, screen Inspect) *appService {
+func NewApp(conf config.Config, screen Inspect) *runnerService {
 	if conf.AzurOpenAIConf.URL == "" || conf.AzurOpenAIConf.Key == "" {
-		return &appService{ready: false}
+		return &runnerService{ready: false}
 	}
 	oc := openai.NewClient(
 		option.WithBaseURL(conf.AzurOpenAIConf.URL),
@@ -61,7 +61,7 @@ func NewApp(conf config.Config, screen Inspect) *appService {
 	p := NewPlanner(&llm, tmpl, screen, conf.DeviceType)
 	c := NewController(&llm, tmpl, screen, conf.DeviceType)
 	o := NewOperator(&llm, tmpl, screen, vision, conf.DeviceType)
-	return &appService{
+	return &runnerService{
 		ready:      true,
 		conf:       conf,
 		planner:    p,
